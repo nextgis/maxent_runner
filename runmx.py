@@ -19,8 +19,8 @@ parser.add_argument('--rnd',type=int)
 parser.add_argument('--reg',type=int)
 parser.add_argument('--max',type=int)
 parser.add_argument('--rep',type=int)
-parser.add_argument('--reptype',type=str)
-parser.add_argument('--adds',type=str)
+parser.add_argument('--reptype',type=str,choices=['cross','boot','subsample'])
+parser.add_argument('--noadds',action="store_true")
 parser.add_argument('--maxit',type=str)
 parser.add_argument('--prev',type=str)
 parser.add_argument('--thr',type=str)
@@ -72,9 +72,24 @@ def prepare_params():
         rnd = '' #reset otherwise there is a popup that needs to be clicked
         if args.rnd: print('rnd set to null as replicates > 1')
     
-    return env,input,output,feat,of,curves,jack,rnd,reg,max,rep
+    reptype = ''
+    if args.reptype == 'boot': 
+        reptype = ' replicatetype=bootstrap'
+        rndseed = ' randomseed'
+    if args.reptype == 'subsample':
+        if rnd == '':
+            print('Subsample replicates require nonzero random test % (rnd). Exiting')
+            sys.exit(1)
+        else:
+            reptype = ' replicatetype=subsample'
+            rndseed = ' randomseed'
+    
+    noadds = ''
+    if args.noadds: noadds = ' noaddsamplestobackground'
+    
+    return env,input,output,feat,of,curves,jack,rnd,reg,max,rep,reptype,rndseed,noadds
 
-def run(env,input,output,feat,of,curves,jack,rnd,reg,max,rep):
+def run(env,input,output,feat,of,curves,jack,rnd,reg,max,rep,reptype,rndseed,noadds):
     params_str = 'environmentallayers=%s togglelayertype=ecoreg samplesfile=%s outputdirectory=%s' % (env,input,output)
     
     if feat != '':
@@ -100,11 +115,18 @@ def run(env,input,output,feat,of,curves,jack,rnd,reg,max,rep):
     
     if rep != '':
         params_str = params_str + rep
+    
+    if reptype != '':
+        params_str = params_str + reptype
+        params_str = params_str + rndseed
         
+    if noadds != '':
+        params_str = params_str + noadds
+    
     cmd = 'java -mx512m -jar bin\\maxent.jar ' + params_str + ' redoifexists autorun' 
     print cmd
     os.system(cmd)
     
 if __name__ == '__main__':
-    env,input,output,feat,of,curves,jack,rnd,reg,max,rep = prepare_params()
-    run(env,input,output,feat,of,curves,jack,rnd,reg,max,rep)
+    env,input,output,feat,of,curves,jack,rnd,reg,max,rep,reptype,rndseed,noadds = prepare_params()
+    run(env,input,output,feat,of,curves,jack,rnd,reg,max,rep,reptype,rndseed,noadds)
