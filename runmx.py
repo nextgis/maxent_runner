@@ -1,13 +1,17 @@
 import argparse
 import os
 import sys
+import platform
 
 #python runmx.py
 
 #java -mx512m -jar maxent.jar environmentallayers=layers togglelayertype=ecoreg samplesfile=samples\bradypus.csv outputdirectory=outputs redoifexists autorun
 
+#Short example:
+#python runmx.py --input samples\bradypus.csv --output outputs --env layers --features linear,quadratic --of logistic
+
 #Full example:
-#c:\python27\python runmx.py --input samples\bradypus.csv --output outputs --env layers --features linear,quadratic,product,threshold,hinge --of logistic --curves --jack
+#python runmx.py --input samples\bradypus.csv --output outputs --env layers --features linear,quadratic,product,threshold,hinge --of logistic --curves --jack
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--input',type=str,required=True)
@@ -74,6 +78,7 @@ def prepare_params():
         if args.rnd: print('rnd set to null as replicates > 1')
     
     reptype = ''
+    rndseed = ''
     if args.reptype == 'boot': 
         reptype = ' replicatetype=bootstrap'
         rndseed = ' randomseed'
@@ -124,10 +129,12 @@ def run(env,input,output,feat,of,curves,jack,rnd,reg,max,rep,reptype,rndseed,noa
     if noadds != '':
         params_str = params_str + noadds
     
-    cmd = 'java -mx512m -jar bin\\maxent.jar ' + params_str + ' redoifexists autorun' 
+    cmd = 'java -mx512m -jar ' + maxbin + ' ' + params_str + ' redoifexists autorun' 
     print cmd
     os.system(cmd)
     
 if __name__ == '__main__':
+    maxbin = os.path.join('bin','maxent.jar')
+
     env,input,output,feat,of,curves,jack,rnd,reg,max,rep,reptype,rndseed,noadds = prepare_params()
     run(env,input,output,feat,of,curves,jack,rnd,reg,max,rep,reptype,rndseed,noadds)
