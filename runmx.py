@@ -1,6 +1,5 @@
 import argparse
 import os
-import subprocess
 import sys
 import platform
 
@@ -137,7 +136,8 @@ def run(env,input,output,feat,of,curves,jack,rnd,reg,max,rep,reptype,rndseed,noa
 if __name__ == '__main__':
     if platform.system() == 'Linux':
         os.environ["DISPLAY"]=":2"
-        xvfb = subprocess.Popen(['Xvfb', ':2', '-screen 0 800x600x24&'])
+        cmd = 'Xvfb :2 -screen 0 800x600x24&'
+        #os.system(cmd)
 
     maxbin = os.path.join('bin','maxent.jar')
 
