@@ -134,6 +134,10 @@ def run(env,input,output,feat,of,curves,jack,rnd,reg,max,rep,reptype,rndseed,noa
     os.system(cmd)
     
 if __name__ == '__main__':
+    if platform.system() == 'Linux':
+        os.environ["DISPLAY"]=":2"
+        xvfb = subprocess.Popen(['Xvfb', ':2', '-screen 0 800x600x24&'])
+
     maxbin = os.path.join('bin','maxent.jar')
 
     env,input,output,feat,of,curves,jack,rnd,reg,max,rep,reptype,rndseed,noadds = prepare_params()
