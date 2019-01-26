@@ -2,20 +2,24 @@ import argparse
 import os
 import sys
 import platform
+import random
+import datetime
+import string
+
 
 #python runmx.py
 
 #java -mx512m -jar maxent.jar environmentallayers=layers togglelayertype=ecoreg samplesfile=samples\bradypus.csv outputdirectory=outputs redoifexists autorun
 
 #Short example:
-#python runmx.py --input samples\bradypus.csv --output outputs --env layers --features linear,quadratic --of logistic
+#python runmx.py --input samples\bradypus.csv --env layers --features linear,quadratic --of logistic
 
 #Full example:
-#python runmx.py --input samples\bradypus.csv --output outputs --env layers --features linear,quadratic,product,threshold,hinge --of logistic --curves --jack
+#python runmx.py --input samples\bradypus.csv --env layers --features linear,quadratic,product,threshold,hinge --of logistic --curves --jack
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--input',type=str,required=True)
-parser.add_argument('--output',type=str,required=True)
+#parser.add_argument('--output',type=str,required=True)
 parser.add_argument('--features',type=str)
 parser.add_argument('--of',type=str,choices=['cloglog','logistic','cumulative','raw'])
 parser.add_argument('--curves',action="store_true")
@@ -37,8 +41,18 @@ args = parser.parse_args()
 def prepare_params():
 
     input = args.input
-    output = args.output
-    if not os.path.exists(output): os.mkdir(output)
+    if not os.path.exists(input): 
+        print('Input species data are missing. Exiting.')
+        sys.exit(1)
+    
+    #output = args.output
+    if not os.path.exists('outputs'): os.mkdir('outputs')
+    hash = ''.join(random.choice(string.ascii_letters) for _ in range(6))
+    date = datetime.datetime.today().strftime("%Y%m%d_%H%M%S")
+    output = date #+ '_' + hash
+    os.mkdir(os.path.join('outputs',output))
+    output = os.path.join('outputs',output)
+    
     env = args.env
     if not os.path.exists(env): 
         print('Environmental variables folder does not exist. Exiting.')
@@ -136,6 +150,7 @@ def run(env,input,output,feat,of,curves,jack,rnd,reg,max,rep,reptype,rndseed,noa
 if __name__ == '__main__':
     if platform.system() == 'Linux':
         os.environ["DISPLAY"]=":2"
+        #need to start X process if it doesn't exist
         cmd = 'Xvfb :2 -screen 0 800x600x24&'
         #os.system(cmd)
 

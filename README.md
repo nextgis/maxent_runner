@@ -5,8 +5,8 @@ Maxent wrapper
 
 Simple run:
 
-python runmx.py --input samples\bradypus.csv --output outputs --env layers --features linear,quadratic
+python runmx.py --input samples/bradypus.csv --env layers --features linear,quadratic
 
 Advanced run:
 
-python runmx.py --input samples\bradypus.csv --output outputs --env layers --features linear,quadratic --replicates  --jack --curves
+python runmx.py --input samples/bradypus.csv --env layers --features linear,quadratic --replicates  --jack --curves
