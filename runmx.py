@@ -5,7 +5,9 @@ import platform
 import random
 import datetime
 import string
-
+from osgeo import ogr
+from osgeo import osr
+import csv
 
 #python runmx.py
 
@@ -36,14 +38,10 @@ parser.add_argument('--thr',type=str)
 parser.add_argument('--bias',type=str)
 parser.add_argument('--env',type=str,required=True)
 parser.add_argument('--envno',type=str)
+parser.add_argument('-r','--reproject',action="store_true")
 args = parser.parse_args()
 
 def prepare_params():
-
-    input = args.input
-    if not os.path.exists(input): 
-        print('Input species data are missing. Exiting.')
-        sys.exit(1)
     
     #output = args.output
     if not os.path.exists('outputs'): os.mkdir('outputs')
@@ -52,6 +50,14 @@ def prepare_params():
     output = date #+ '_' + hash
     os.mkdir(os.path.join('outputs',output))
     output = os.path.join('outputs',output)
+    
+    input = args.input
+    if not os.path.exists(input): 
+        print('Input species data are missing. Exiting.')
+        sys.exit(1)
+    if args.reproject: 
+        reproject_input(input,output)
+        input = os.path.join(output,'input.csv')
     
     env = args.env
     if not os.path.exists(env): 
@@ -109,8 +115,35 @@ def prepare_params():
     
     return env,input,output,feat,of,curves,jack,rnd,reg,max,rep,reptype,rndseed,noadds
 
+def reproject_input(input,output):
+    source = osr.SpatialReference()
+    source.ImportFromEPSG(4326)
+
+    target = osr.SpatialReference()
+    target.ImportFromEPSG(54009)
+
+    transform = osr.CoordinateTransformation(source, target)
+    
+    with open(os.path.join(output,'input.csv'), mode='wb') as output_file:
+        output_writer = csv.writer(output_file, delimiter=',')
+        with open(input) as csv_file:
+            csv_reader = csv.reader(csv_file)
+            headers = next(csv_reader, None)
+            output_writer.writerow(headers)
+            for row in csv_reader:
+                species = row[0]
+                lon = row[1]
+                lat = row[2]
+        
+                point = ogr.CreateGeometryFromWkt("POINT (%s %s)" % (lon,lat))
+                point.Transform(transform)
+                x = point.GetX()
+                y = point.GetY()
+                output_writer.writerow([species, x, y])
+        
+    
 def run(env,input,output,feat,of,curves,jack,rnd,reg,max,rep,reptype,rndseed,noadds):
-    params_str = 'environmentallayers=%s togglelayertype=ecoreg samplesfile=%s outputdirectory=%s' % (env,input,output)
+    params_str = 'environmentallayers=%s samplesfile=%s outputdirectory=%s' % (env,input,output)
     
     if feat != '':
         params_str = params_str + feat
