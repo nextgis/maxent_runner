@@ -119,8 +119,9 @@ def reproject_input(input,output):
     source = osr.SpatialReference()
     source.ImportFromEPSG(4326)
 
+    proj = '+proj=moll +lon_0=30 +x_0=3335846.22854 +y_0=-336410.83237 +datum=WGS84 +units=m +no_defs'
     target = osr.SpatialReference()
-    target.ImportFromEPSG(54009)
+    target.ImportFromProj4(proj)
 
     transform = osr.CoordinateTransformation(source, target)
     
