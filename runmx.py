@@ -148,7 +148,7 @@ def prepare_params():
         for envn in args.envno.split(','):
             envno = envno + ' -N ' + envn
     
-    return env,envcat,input,output,feat,of,curves,jack,rnd,reg,max,rep,reptype,rndseed,noadds,maxit,prev,thr,envno
+    return date,env,envcat,input,output,feat,of,curves,jack,rnd,reg,max,rep,reptype,rndseed,noadds,maxit,prev,thr,envno
 
 def reproject_input(input,output):
     from osgeo import ogr
@@ -243,5 +243,7 @@ if __name__ == '__main__':
 
     maxbin = os.path.join('bin','maxent.jar')
 
-    env,envcat,input,output,feat,of,curves,jack,rnd,reg,max,rep,reptype,rndseed,noadds,maxit,prev,thr,envno = prepare_params()
+    date,env,envcat,input,output,feat,of,curves,jack,rnd,reg,max,rep,reptype,rndseed,noadds,maxit,prev,thr,envno = prepare_params()
     run(env,envcat,input,output,feat,of,curves,jack,rnd,reg,max,rep,reptype,rndseed,noadds,maxit,prev,thr,envno)
+    
+    print(date)
