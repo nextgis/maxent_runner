@@ -28,7 +28,7 @@ def rasterize(shp_name, raster_name, buffer_size, result_name):
             lr = raster.index(*geometry.bounds[2:4])
 
             # read the subset of the data into a numpy array
-            data[lr[0]: ul[0]+1, ul[1]: lr[1]+1] = 1
+            data[int(lr[0]): int(ul[0]+1), int(ul[1]): int(lr[1]+1)] = 1
 
 
     with rasterio.open(result_name, 'w', **profile) as result:
