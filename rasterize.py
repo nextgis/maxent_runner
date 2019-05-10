@@ -39,7 +39,7 @@ def rasterize(shp_name, raster_name, buffer_size, result_name):
 if __name__ == "__main__":
     buffer_dist = 0.05
     shp = os.path.join('samples','parks.shp')
-    raster_name = 'conf17938prim.tif'
+    raster_name = os.path.join('samples','conf17938prim.tif')
     result_name = 'result.tif'
 
     rasterize(shp, raster_name, buffer_dist, result_name)
