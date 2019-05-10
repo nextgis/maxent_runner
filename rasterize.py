@@ -4,7 +4,7 @@ import rasterio
 import rasterio.features
 from affine import Affine
 from shapely.geometry import shape
-
+import os
 
 
 def rasterize(shp_name, raster_name, buffer_size, result_name):
