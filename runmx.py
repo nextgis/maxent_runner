@@ -40,113 +40,230 @@ parser.add_argument('--envno',type=str)
 parser.add_argument('-r','--reproject',action="store_true")
 args = parser.parse_args()
 
-def prepare_params():
-    
-    #output = args.output
-    if not os.path.exists('outputs'): os.mkdir('outputs')
-    hash = ''.join(random.choice(string.ascii_letters) for _ in range(6))
-    date = datetime.datetime.today().strftime("%Y%m%d_%H%M%S")
-    output = date #+ '_' + hash
-    os.mkdir(os.path.join('outputs',output))
-    output = os.path.join('outputs',output)
-    
-    input = args.input
-    if not os.path.exists(input): 
-        print('Input species data are missing. Exiting.')
-        sys.exit(1)
-    if args.reproject: 
-        reproject_input(input,output)
-        input = os.path.join(output,'input.csv')
-    
-    env = args.env
-    if not os.path.exists(env): 
-        print('Environmental variables folder does not exist. Exiting.')
-        sys.exit(1)
-    
-    envcat = ''
-    for l in glob.glob(os.path.join(env,'*.asc')):
-        if os.path.exists(l + '.cat'):
-            envcat = envcat + ' -t ' + l.replace('.asc','').replace(env,'').replace('\\','')
-    
-    feat = ' '
-    if args.features:
-        if 'linear' not in args.features: feat = feat + ' nolinear '
-        if 'quadratic' not in args.features: feat = feat + ' noquadratic '
-        if 'product' not in args.features: feat = feat + ' noproduct '
-        if 'threshold' not in args.features: feat = feat + ' nothreshold '
-        if 'hinge' not in args.features: feat = feat + ' nohinge '
-        if 'auto' not in args.features: feat = feat + ' noautofeature  '
-    
-    of = ''
-    if args.of: of = ' outputformat=' + args.of
-    
-    curves = ''
-    if args.curves: curves = ' responsecurves'
-    
-    jack = ''
-    if args.jack: jack = ' jackknife'
-    
-    rnd = ''
-    if args.rnd: rnd = ' randomtestpoints=' + str(args.rnd)
-    
-    reg = ''
-    if args.reg: reg = ' betamultiplier=' + str(args.reg) + '.0'
-    
-    max = ''
-    if args.max: max = ' maximumbackground=' + str(args.max)
-    
-    rep = ''
-    if args.rep > 1: 
-        rep = ' replicates=' + str(args.rep)
-        rnd = '' #reset otherwise there is a popup that needs to be clicked
-        if args.rnd: print('rnd set to null as replicates > 1')
-    
-    reptype = ''
-    rndseed = ''
-    if args.reptype == 'boot': 
-        reptype = ' replicatetype=bootstrap'
-        rndseed = ' randomseed'
-    if args.reptype == 'subsample':
-        if rnd == '':
-            print('Subsample replicates require nonzero random test % (rnd). Exiting')
+
+class ParamAnalyser:
+    def __init__(self, args):
+        self._args = args
+        self.date = datetime.datetime.today().strftime("%Y%m%d_%H%M%S")
+
+
+        self._output_dir = 'output'
+        self.__input_file = ''
+        
+        self.__prepare_output()
+        self._prepare_input()
+        self._check_env()
+
+    def __prepare_output(self):
+        if not os.path.exists(self._output_dir): 
+            os.mkdir(self._output_dir)
+        os.mkdir(self.output)
+        
+    def _prepare_input(self):
+        if not os.path.exists(self._args.input): 
+            print('Input species data are missing. Exiting.')
             sys.exit(1)
+
+        if self.reproject: 
+            reproject_input(self.input, self.output)
+            input = os.path.join(output, 'input.csv')
         else:
-            reptype = ' replicatetype=subsample'
+            input = self._args.input
+
+        self.__input_file = input
+ 
+
+    def _check_env(self):
+        if not os.path.exists(self.env): 
+            print('Environmental variables folder does not exist. Exiting.')
+            sys.exit(1)
+ 
+
+    @property
+    def output(self):
+        hash = ''.join(random.choice(string.ascii_letters) for _ in range(6))
+        output = self.date #+ '_' + hash
+        output = os.path.join(self._output_dir, output)
+
+        return output
+    
+    @property
+    def input(self):
+        return self.__input_file
+      
+    @property
+    def reproject(self):
+        return self._args.reproject
+
+    @property
+    def env(self):
+        return self._args.env
+
+    @property
+    def envcat(self):
+        envcat = ''
+        for l in glob.glob(os.path.join(self.env,'*.asc')):
+            if os.path.exists(l + '.cat'):
+                envcat = envcat + ' -t ' + l.replace('.asc','').replace(env,'').replace('\\','')
+        return envcat
+ 
+    @property
+    def feat(self):
+        feat = ' '
+        if args.features:
+            if 'linear' not in args.features: feat = feat + ' nolinear '
+            if 'quadratic' not in args.features: feat = feat + ' noquadratic '
+            if 'product' not in args.features: feat = feat + ' noproduct '
+            if 'threshold' not in args.features: feat = feat + ' nothreshold '
+            if 'hinge' not in args.features: feat = feat + ' nohinge '
+            if 'auto' not in args.features: feat = feat + ' noautofeature  '
+
+        return feat
+ 
+    @property
+    def of(self):
+        of = ''
+        if self._args.of: 
+            of = ' outputformat=' + self._args.of
+
+        return of 
+    
+
+    @property
+    def curves(self):
+        curves = ' responsecurves'  if self._args.curves else "" 
+        return curves
+ 
+
+    @property
+    def jack(self):
+        jack = ' jackknife' if args.jack else ''
+        return jack
+ 
+    @property
+    def rnd(self):
+        if self._args.rnd: 
+            rnd = ' randomtestpoints=' + str(self._args.rnd) 
+        else:
+            rnd =  ""
+        return rnd
+
+    @property
+    def reg(self):
+        if self._args.reg: 
+            reg = ' betamultiplier=' + str(self._args.reg) + '.0' 
+        else:
+            reg = ""
+        return reg
+
+    @property
+    def max(self):
+        if self._args.max: 
+            max = ' maximumbackground=' + str(self._args.max) 
+        else:
+            max = ""
+        return max
+
+    @property
+    def rep(self):
+        rep = ''
+        if self._args.rep > 1: 
+            rep = ' replicates=' + str(self._args.rep)
+            rnd = '' #reset otherwise there is a popup that needs to be clicked
+            if args.rnd: print('rnd set to null as replicates > 1')
+        return rep
+ 
+
+    @property
+    def reptype(self):
+        reptype = ''
+        if self._args.reptype == 'boot': 
+            reptype = ' replicatetype=bootstrap'
+        if self._args.reptype == 'subsample':
+            if self.rnd == '':
+                print('Subsample replicates require nonzero random test % (rnd). Exiting')
+                sys.exit(1)
+            else:
+                reptype = ' replicatetype=subsample'
+    
+        return reptype
+
+    @property
+    def rndseed(self):
+        rndseed = ''
+        if self._args.reptype == 'boot': 
             rndseed = ' randomseed'
+        if self._args.reptype == 'subsample':
+            if self.rnd == '':
+                print('Subsample replicates require nonzero random test % (rnd). Exiting')
+                sys.exit(1)
+            else:
+                rndseed = ' randomseed'
     
-    noadds = ''
-    if args.noadds: noadds = ' noaddsamplestobackground'
+        return rndseed
+
+    @property
+    def noadds(self):
+        if self._args.noadds: 
+            noadds = ' noaddsamplestobackground'
+        else:
+            noadds = ""
+        return noadds
+
+    @property
+    def maxit(self):
+        if self._args.maxit: 
+            maxit = ' maximumiterations=' + str(args.maxit)
+        else:
+            maxit = ""
+        return maxit
+
+    @property
+    def prev(self):
+        if self._args.prev: 
+            prev = ' defaultprevalence=' + str(args.prev)
+        else:
+            prev = ""
+        return prev
+
+
+    @property
+    def thr(self):
+        thr = ' '
+        if self._args.thr:
+            if self._args.thr == 'fix1': thr = ' "applythresholdrule=fixed cumulative value 1" '
+            if self._args.thr == 'fix5': thr = ' "applythresholdrule=fixed cumulative value 5" '
+            if self._args.thr == 'fix10': thr = ' "applythresholdrule=fixed cumulative value 10" '
+            if self._args.thr == 'min': thr = ' "applythresholdrule=minimum training presence" '
+            if self._args.thr == 'perc10': thr = ' "applythresholdrule=10 percentile training presence" '
+            if self._args.thr == 'equaltrain': thr = ' "applythresholdrule=equal training sensitivity and specificity" '
+            if self._args.thr == 'maxtrain': thr = ' "applythresholdrule=maximum training sensitivity plus specificity" '
+            #Next two are not recognized http://m-d.me/img/ss/20190207_165622.png
+            if self._args.thr == 'equaltest': 
+                thr = ' "applythresholdrule=????" '
+                print('Error: Threshold rule equal test sensitivity and specificity not recognized')
+                sys.exit(1)
+            if self._args.thr == 'maxtest': 
+                thr = ' "applythresholdrule=????" '
+                print('Error: Threshold rule maximum test sensitivity plus specificity not recognized')
+                sys.exit(1)
+            if self._args.thr == 'equate': thr = ' "applythresholdrule=equate entropy of thresholded and original distributions" '
+
+        return thr
+ 
+
+    @property
+    def envno(self):
+        envno = ' '
+        if args.envno:
+            for envn in args.envno.split(','):
+                envno = envno + ' -N ' + envn
+        return envno
     
-    maxit = ''
-    if args.maxit: maxit = ' maximumiterations=' + str(args.maxit)
-    
-    prev = ''
-    if args.prev: prev = ' defaultprevalence=' + str(args.prev)
-    
-    thr = ' '
-    if args.thr:
-        if args.thr == 'fix1': thr = ' "applythresholdrule=fixed cumulative value 1" '
-        if args.thr == 'fix5': thr = ' "applythresholdrule=fixed cumulative value 5" '
-        if args.thr == 'fix10': thr = ' "applythresholdrule=fixed cumulative value 10" '
-        if args.thr == 'min': thr = ' "applythresholdrule=minimum training presence" '
-        if args.thr == 'perc10': thr = ' "applythresholdrule=10 percentile training presence" '
-        if args.thr == 'equaltrain': thr = ' "applythresholdrule=equal training sensitivity and specificity" '
-        if args.thr == 'maxtrain': thr = ' "applythresholdrule=maximum training sensitivity plus specificity" '
-        #Next two are not recognized http://m-d.me/img/ss/20190207_165622.png
-        if args.thr == 'equaltest': 
-            thr = ' "applythresholdrule=????" '
-            print('Error: Threshold rule equal test sensitivity and specificity not recognized')
-            sys.exit(1)
-        if args.thr == 'maxtest': 
-            thr = ' "applythresholdrule=????" '
-            print('Error: Threshold rule maximum test sensitivity plus specificity not recognized')
-            sys.exit(1)
-        if args.thr == 'equate': thr = ' "applythresholdrule=equate entropy of thresholded and original distributions" '
-    
-    envno = ' '
-    if args.envno:
-        for envn in args.envno.split(','):
-            envno = envno + ' -N ' + envn
+
+
+
+def prepare_params():
     
     return date,env,envcat,input,output,feat,of,curves,jack,rnd,reg,max,rep,reptype,rndseed,noadds,maxit,prev,thr,envno
 
@@ -243,7 +360,11 @@ if __name__ == '__main__':
 
     maxbin = os.path.join('bin','maxent.jar')
 
-    date,env,envcat,input,output,feat,of,curves,jack,rnd,reg,max,rep,reptype,rndseed,noadds,maxit,prev,thr,envno = prepare_params()
+    analyser = ParamAnalyser(args)
+    # date,env,envcat,input,output,feat,of,curves,jack,rnd,reg,max,rep,reptype,rndseed,noadds,maxit,prev,thr,envno = prepare_params()
+    date,env,envcat,input,output,feat,of,curves,jack,rnd,reg,max,rep,reptype,rndseed,noadds,maxit,prev,thr,envno =\
+    analyser.date,analyser.env,analyser.envcat,analyser.input,analyser.output,analyser.feat,analyser.of,analyser.curves,analyser.jack,analyser.rnd,analyser.reg,analyser.max,analyser.rep,analyser.reptype,analyser.rndseed,analyser.noadds,analyser.maxit,analyser.prev,analyser.thr,analyser.envno 
+
     run(env,envcat,input,output,feat,of,curves,jack,rnd,reg,max,rep,reptype,rndseed,noadds,maxit,prev,thr,envno)
     
     print(date)
