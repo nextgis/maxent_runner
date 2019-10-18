@@ -38,7 +38,7 @@ parser.add_argument('--bias',type=str)
 parser.add_argument('--env',type=str,required=True)
 parser.add_argument('--envno',type=str)
 parser.add_argument('-r','--reproject',action="store_true")
-args = parser.parse_args()
+arguments = parser.parse_args()
 
 
 class ParamAnalyser:
@@ -46,15 +46,14 @@ class ParamAnalyser:
         self._args = args
         self.date = datetime.datetime.today().strftime("%Y%m%d_%H%M%S")
 
-
-        self._output_dir = 'output'
-        self.__input_file = ''
+        self._output_dir = 'outputs'
+        self._input_file = ''
         
-        self.__prepare_output()
+        self._prepare_output()
         self._prepare_input()
         self._check_env()
 
-    def __prepare_output(self):
+    def _prepare_output(self):
         if not os.path.exists(self._output_dir): 
             os.mkdir(self._output_dir)
         os.mkdir(self.output)
@@ -63,22 +62,18 @@ class ParamAnalyser:
         if not os.path.exists(self._args.input): 
             print('Input species data are missing. Exiting.')
             sys.exit(1)
-
         if self.reproject: 
             reproject_input(self.input, self.output)
             input = os.path.join(output, 'input.csv')
         else:
             input = self._args.input
-
-        self.__input_file = input
+        self._input_file = input
  
-
     def _check_env(self):
         if not os.path.exists(self.env): 
             print('Environmental variables folder does not exist. Exiting.')
             sys.exit(1)
  
-
     @property
     def output(self):
         hash = ''.join(random.choice(string.ascii_letters) for _ in range(6))
@@ -89,7 +84,7 @@ class ParamAnalyser:
     
     @property
     def input(self):
-        return self.__input_file
+        return self._input_file
       
     @property
     def reproject(self):
@@ -110,13 +105,13 @@ class ParamAnalyser:
     @property
     def feat(self):
         feat = ' '
-        if args.features:
-            if 'linear' not in args.features: feat = feat + ' nolinear '
-            if 'quadratic' not in args.features: feat = feat + ' noquadratic '
-            if 'product' not in args.features: feat = feat + ' noproduct '
-            if 'threshold' not in args.features: feat = feat + ' nothreshold '
-            if 'hinge' not in args.features: feat = feat + ' nohinge '
-            if 'auto' not in args.features: feat = feat + ' noautofeature  '
+        if self._args.features:
+            if 'linear' not in self._args.features: feat = feat + ' nolinear '
+            if 'quadratic' not in self._args.features: feat = feat + ' noquadratic '
+            if 'product' not in self._args.features: feat = feat + ' noproduct '
+            if 'threshold' not in self._args.features: feat = feat + ' nothreshold '
+            if 'hinge' not in self._args.features: feat = feat + ' nohinge '
+            if 'auto' not in self._args.features: feat = feat + ' noautofeature  '
 
         return feat
  
@@ -125,19 +120,16 @@ class ParamAnalyser:
         of = ''
         if self._args.of: 
             of = ' outputformat=' + self._args.of
-
         return of 
-    
 
     @property
     def curves(self):
         curves = ' responsecurves'  if self._args.curves else "" 
         return curves
- 
 
     @property
     def jack(self):
-        jack = ' jackknife' if args.jack else ''
+        jack = ' jackknife' if self._args.jack else ''
         return jack
  
     @property
@@ -170,9 +162,8 @@ class ParamAnalyser:
         if self._args.rep > 1: 
             rep = ' replicates=' + str(self._args.rep)
             rnd = '' #reset otherwise there is a popup that needs to be clicked
-            if args.rnd: print('rnd set to null as replicates > 1')
+            if self._args.rnd: print('rnd set to null as replicates > 1')
         return rep
- 
 
     @property
     def reptype(self):
@@ -185,7 +176,6 @@ class ParamAnalyser:
                 sys.exit(1)
             else:
                 reptype = ' replicatetype=subsample'
-    
         return reptype
 
     @property
@@ -199,7 +189,6 @@ class ParamAnalyser:
                 sys.exit(1)
             else:
                 rndseed = ' randomseed'
-    
         return rndseed
 
     @property
@@ -226,7 +215,6 @@ class ParamAnalyser:
             prev = ""
         return prev
 
-
     @property
     def thr(self):
         thr = ' '
@@ -250,23 +238,15 @@ class ParamAnalyser:
             if self._args.thr == 'equate': thr = ' "applythresholdrule=equate entropy of thresholded and original distributions" '
 
         return thr
- 
 
     @property
     def envno(self):
         envno = ' '
-        if args.envno:
-            for envn in args.envno.split(','):
+        if self._args.envno:
+            for envn in self._args.envno.split(','):
                 envno = envno + ' -N ' + envn
         return envno
     
-
-
-
-def prepare_params():
-    
-    return date,env,envcat,input,output,feat,of,curves,jack,rnd,reg,max,rep,reptype,rndseed,noadds,maxit,prev,thr,envno
-
 def reproject_input(input,output):
     from osgeo import ogr
     from osgeo import osr
@@ -298,55 +278,34 @@ def reproject_input(input,output):
                 output_writer.writerow([species, x, y])
         
     
-def run(env,envcat,input,output,feat,of,curves,jack,rnd,reg,max,rep,reptype,rndseed,noadds,maxit,prev,thr,envno):
-    params_str = 'environmentallayers=%s samplesfile=%s outputdirectory=%s' % (env,input,output)
+def run(analyser, maxbin):
+    params_str = 'environmentallayers=%s samplesfile=%s outputdirectory=%s' % (analyser.env, analyser.input, analyser.output)
+
+    params = [
+       analyser.feat,
+       analyser.of,
+       analyser.curves,
+       analyser.jack,
+       analyser.rnd,
+       analyser.reg,
+       analyser.max,
+       analyser.rep,
+       analyser.noadds,
+       analyser.maxit,
+       analyser.prev,
+       analyser.thr,
+       analyser.envno,
+       analyser.envcat,
+    ]
+    for p in params:
+        if p != "":
+            params_str += p
     
-    if feat != '':
-        params_str = params_str + feat
-    
-    if of != '':
-        params_str = params_str + of
-    
-    if curves != '':
-        params_str = params_str + curves
-        
-    if jack != '':
-        params_str = params_str + jack
-    
-    if rnd != '':
-        params_str = params_str + rnd
-    
-    if reg != '':
-        params_str = params_str + reg
-    
-    if max != '':
-        params_str = params_str + max
-    
-    if rep != '':
-        params_str = params_str + rep
-    
-    if reptype != '':
+    if analyser.reptype != '':
         params_str = params_str + reptype
         params_str = params_str + rndseed
         
-    if noadds != '':
-        params_str = params_str + noadds
-    
-    if maxit != '':
-        params_str = params_str + maxit
-        
-    if prev != '':
-        params_str = params_str + prev
-        
-    if thr != '':
-        params_str = params_str + thr
-        
-    if envno != '':
-        params_str = params_str + envno
-        
-    if envcat != '':
-        params_str = params_str + envcat
-        
+       
     cmd = 'java -mx512m -jar ' + maxbin + ' ' + params_str + ' redoifexists autorun' 
     print cmd
     os.system(cmd)
@@ -360,11 +319,7 @@ if __name__ == '__main__':
 
     maxbin = os.path.join('bin','maxent.jar')
 
-    analyser = ParamAnalyser(args)
-    # date,env,envcat,input,output,feat,of,curves,jack,rnd,reg,max,rep,reptype,rndseed,noadds,maxit,prev,thr,envno = prepare_params()
-    date,env,envcat,input,output,feat,of,curves,jack,rnd,reg,max,rep,reptype,rndseed,noadds,maxit,prev,thr,envno =\
-    analyser.date,analyser.env,analyser.envcat,analyser.input,analyser.output,analyser.feat,analyser.of,analyser.curves,analyser.jack,analyser.rnd,analyser.reg,analyser.max,analyser.rep,analyser.reptype,analyser.rndseed,analyser.noadds,analyser.maxit,analyser.prev,analyser.thr,analyser.envno 
-
-    run(env,envcat,input,output,feat,of,curves,jack,rnd,reg,max,rep,reptype,rndseed,noadds,maxit,prev,thr,envno)
+    analyser = ParamAnalyser(arguments)
+    run(analyser, maxbin)
     
-    print(date)
+    print(analyser.date)
