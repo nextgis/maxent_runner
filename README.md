@@ -4,6 +4,8 @@ Maxent wrapper
 # Preparation
 
     Xvfb :2 -screen 0 800x600x24&
+    export DISPLAY=:1
+
 
 # Examples
 
