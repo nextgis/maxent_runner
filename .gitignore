@@ -1,0 +1,3 @@
+*pyc
+layers/maxent.cache/*
+outputs/*
