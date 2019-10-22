@@ -1,10 +1,7 @@
 import numpy as np
 import fiona
 import rasterio
-import rasterio.features
-from affine import Affine
 from shapely.geometry import shape
-import os
 
 
 def rasterize(shp_name, raster_name, buffer_size, result_name):
@@ -16,7 +13,7 @@ def rasterize(shp_name, raster_name, buffer_size, result_name):
         transform = raster.transform
         profile = raster.profile
         
-        data = np.zeros(raster.shape)
+        data = np.ones(raster.shape, dtype=np.int8)
 
 
         for feature in vector:
@@ -28,7 +25,7 @@ def rasterize(shp_name, raster_name, buffer_size, result_name):
             lr = raster.index(*geometry.bounds[2:4])
 
             # read the subset of the data into a numpy array
-            data[int(lr[0]): int(ul[0]+1), int(ul[1]): int(lr[1]+1)] = 1
+            data[int(lr[0]): int(ul[0]+1), int(ul[1]): int(lr[1]+1)] = 2
 
 
     with rasterio.open(result_name, 'w', **profile) as result:
@@ -37,6 +34,8 @@ def rasterize(shp_name, raster_name, buffer_size, result_name):
 
 
 if __name__ == "__main__":
+    import os
+
     buffer_dist = 0.05
     shp = os.path.join('samples','parks.shp')
     raster_name = os.path.join('samples','conf17938prim.tif')
