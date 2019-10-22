@@ -16,3 +16,6 @@ Simple run:
 Advanced run:
 
     python runmx.py --input samples/bradypus.csv --env layers --features linear,quadratic --replicates  --jack --curves
+
+    python runmx.py --input samples/bradypus.csv --env layers --features linear,quadratic --of logistic --bias_shp samples/vizits.shp --bias_buffer 2
+

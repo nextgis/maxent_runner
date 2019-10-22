@@ -4,6 +4,8 @@ import rasterio
 from shapely.geometry import shape
 
 
+DTYPE = 'int32'  # np.dtype(int)
+
 def rasterize(shp_name, raster_name, buffer_size, result_name):
 
     with fiona.open(shp_name, 'r') as vector, \
@@ -13,7 +15,7 @@ def rasterize(shp_name, raster_name, buffer_size, result_name):
         transform = raster.transform
         profile = raster.profile
         
-        data = np.ones(raster.shape, dtype=np.int8)
+        data = np.ones(raster.shape, dtype=DTYPE)
 
 
         for feature in vector:
@@ -28,8 +30,10 @@ def rasterize(shp_name, raster_name, buffer_size, result_name):
             data[int(lr[0]): int(ul[0]+1), int(ul[1]): int(lr[1]+1)] = 2
 
 
-    with rasterio.open(result_name, 'w', **profile) as result:
-        result.write(data.astype(rasterio.uint8), 1)
+    with rasterio.Env():
+        profile['dtype'] = DTYPE
+        with rasterio.open(result_name, 'w', **profile) as result:
+            result.write(data.astype(DTYPE), 1)
 
 
 

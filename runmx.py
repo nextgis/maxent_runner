@@ -7,6 +7,10 @@ import datetime
 import string
 import csv
 import glob
+import tempfile
+
+
+from rasterize import rasterize
 
 #python runmx.py
 
@@ -34,7 +38,8 @@ parser.add_argument('--noadds',action="store_true")
 parser.add_argument('--maxit',type=int)
 parser.add_argument('--prev',type=int)
 parser.add_argument('--thr',type=str,choices=['fix1','fix5','fix10','min','perc10','equaltrain','maxtrain','equaltest','maxtest','equate'])
-parser.add_argument('--bias',type=str)
+parser.add_argument('--bias_shp',type=str)
+parser.add_argument('--bias_buffer',type=float)
 parser.add_argument('--env',type=str,required=True)
 parser.add_argument('--envno',type=str)
 parser.add_argument('-r','--reproject',action="store_true")
@@ -48,10 +53,12 @@ class ParamAnalyser:
 
         self._output_dir = 'outputs'
         self._input_file = ''
+        self._bias_file = ''
         
         self._prepare_output()
         self._prepare_input()
         self._check_env()
+        self._prepare_bias()
 
     def _prepare_output(self):
         if not os.path.exists(self._output_dir): 
@@ -73,6 +80,16 @@ class ParamAnalyser:
         if not os.path.exists(self.env): 
             print('Environmental variables folder does not exist. Exiting.')
             sys.exit(1)
+
+    def _prepare_bias(self):
+        if not self.bias_shp is None:
+            files = []  # list of env files
+            for l in glob.glob(os.path.join(self.env,'*.asc')):
+                files.append(l)
+            self._bias_file = tempfile.mktemp('.asc')
+            # we can use any of env file as template => use file[0]
+            rasterize(self.bias_shp, files[0], self.bias_buffer, self._bias_file)
+
  
     @property
     def output(self):
@@ -246,6 +263,21 @@ class ParamAnalyser:
             for envn in self._args.envno.split(','):
                 envno = envno + ' -N ' + envn
         return envno
+
+    @property
+    def bias(self):
+        bias = ""
+        if self._bias_file != "":
+            bias = ' biasfile="%s" ' % (self._bias_file)
+        return bias
+ 
+    @property
+    def bias_shp(self):
+        return self._args.bias_shp
+ 
+    @property
+    def bias_buffer(self):
+        return self._args.bias_buffer
     
 def reproject_input(input,output):
     from osgeo import ogr
@@ -296,6 +328,7 @@ def run(analyser, maxbin):
        analyser.thr,
        analyser.envno,
        analyser.envcat,
+       analyser.bias,
     ]
     for p in params:
         if p != "":
@@ -304,7 +337,7 @@ def run(analyser, maxbin):
     if analyser.reptype != '':
         params_str = params_str + reptype
         params_str = params_str + rndseed
-        
+
        
     cmd = 'java -mx512m -jar ' + maxbin + ' ' + params_str + ' redoifexists autorun' 
     print cmd
